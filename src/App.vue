@@ -7,8 +7,8 @@
 			<Skeleton v-if="loading.ipify" class="h-6 w-[250px]" />
 			<span v-else class="text-center">{{ ipify }}</span>
 		</Card>
-		<div class="grid grid-cols-2 gap-2 m-4">
-			<Card class="container mx-auto p-4">
+		<div class="flex flex-wrap flex-row gap-4 m-4">
+			<Card class="container grow basis-1/3 mx-auto p-4">
 				<div>
 					<CardTitle class="font-bold text-center text-xl mb-4">
 						Bancho 命中测试
@@ -22,7 +22,7 @@
 									<TableHead class="w-[100px]">
 										分支
 									</TableHead>
-									<TableHead>IP</TableHead>
+									<TableHead class="w-[250px]">IP</TableHead>
 									<TableHead class="text-right"
 										>国家或地区
 									</TableHead>
@@ -36,7 +36,7 @@
 									</TableCell>
 									<TableCell>
 										<Skeleton
-											v-if="loading.cloudflare"
+											v-if="loading.bancho"
 											class="h-5 w-[250px]"
 										/>
 										<span v-else>{{ ipify }}</span>
@@ -45,13 +45,13 @@
 										class="grid text-right justify-items-end"
 									>
 										<Skeleton
-											v-if="loading.cloudflare"
+											v-if="loading.bancho"
 											class="h-5 w-[100px]"
 										/>
 										<span v-else>
 											{{
 												getCountry(
-													cloudflare.loc || "Unknown"
+													bancho.country || "Unknown"
 												)
 											}}</span
 										>
@@ -160,7 +160,7 @@
 								fill="white"
 							>
 								{{ currentTime }} @
-								{{ getCountry(cloudflare.loc || "Unknown") }}
+								{{ getCountry(bancho.country || "Unknown") }}
 							</text>
 							<text
 								x="113"
@@ -185,11 +185,100 @@
 					</CardContent>
 				</div>
 			</Card>
-			<Card class="container mx-auto p-4">
+			<Card class="container grow basis-1/3 mx-auto p-4">
 				<div>
 					<CardTitle class="font-bold text-center text-xl"
 						>IP 地址查询</CardTitle
 					>
+					<CardContent>
+						<Table class="mb-4">
+							<TableHeader>
+								<TableRow>
+									<TableHead class="w-[150px]">
+										来源
+									</TableHead>
+									<TableHead class="w-[250px]">IP</TableHead>
+									<TableHead>国家或地区 </TableHead>
+									<TableHead>城市 </TableHead>
+								</TableRow>
+							</TableHeader>
+
+							<TableBody>
+								<TableRow>
+									<TableCell class="font-medium">
+										IPify
+									</TableCell>
+									<TableCell>
+										<Skeleton
+											v-if="loading.ipify"
+											class="h-5 w-[250px]"
+										/>
+										<span v-else>{{ ipify }}</span>
+									</TableCell>
+									<TableCell class=""> 来源不适用 </TableCell>
+									<TableCell class=""> 来源不适用 </TableCell>
+								</TableRow>
+								<TableRow>
+									<TableCell class="font-medium">
+										Cloudflare Trace
+									</TableCell>
+									<TableCell>
+										<Skeleton
+											v-if="loading.cloudflare"
+											class="h-5 w-[250px]"
+										/>
+										<span v-else>{{ cloudflare.ip }}</span>
+									</TableCell>
+									<TableCell class="">
+										<Skeleton
+											v-if="loading.bancho"
+											class="h-5 w-[100px]"
+										/>
+										<span v-else>
+											{{
+												getCountry(
+													cloudflare.loc || "Unknown"
+												)
+											}}</span
+										>
+									</TableCell>
+									<TableCell class=""> 来源不适用 </TableCell>
+								</TableRow>
+								<TableRow>
+									<TableCell class="font-medium">
+										IP.SB
+									</TableCell>
+									<TableCell>
+										<Skeleton
+											v-if="loading.IPSB"
+											class="h-5 w-[250px]"
+										/>
+										<span v-else>{{ IPSB.ip }}</span>
+									</TableCell>
+									<TableCell class="">
+										<Skeleton
+											v-if="loading.IPSB"
+											class="h-5 w-[100px]"
+										/>
+										<span v-else>
+											{{
+												getCountry(
+													IPSB.country || "Unknown"
+												)
+											}}</span
+										>
+									</TableCell>
+									<TableCell class="">
+										<Skeleton
+											v-if="loading.IPSB"
+											class="h-5 w-[100px]"
+										/>
+										<span v-else> {{ IPSB.city }}</span>
+									</TableCell>
+								</TableRow>
+							</TableBody>
+						</Table>
+					</CardContent>
 				</div>
 			</Card>
 		</div>
@@ -200,7 +289,7 @@
 import { ref, onMounted } from "vue";
 import { useDark } from "@vueuse/core";
 
-import { getIpify, getCloudflare } from "@/lib/api";
+import { getIpify, getCloudflare, getBanchoGeoIP2, getIPSB } from "@/lib/api";
 import { getTime } from "@/lib/utils";
 import { getCountryName } from "@/lib/metadata";
 
@@ -226,6 +315,8 @@ const { currentTime } = getTime();
 const loading = ref({
 	ipify: true,
 	cloudflare: true,
+	bancho: true,
+	IPSB: true,
 });
 
 const ipify = ref<string | null>(null);
@@ -234,6 +325,15 @@ const cloudflare = ref<{
 	ip: string | null;
 	colo: string | null;
 }>({ loc: null, ip: null, colo: null });
+const bancho = ref<{
+	country: string | null;
+	city: string | null;
+}>({ country: null, city: null });
+const IPSB = ref<{
+	ip: string | null;
+	country: string | null;
+	city: string | null;
+}>({ ip: null, country: null, city: null });
 
 const getCountry = (code: string) => {
 	return getCountryName(code) || "Unknown";
@@ -254,10 +354,27 @@ const fetchData = async () => {
 			colo: cloudflareData.colo,
 		};
 		loading.value.cloudflare = false;
+
+		const banchoData = await getBanchoGeoIP2(ipify.value);
+		bancho.value = {
+			country: banchoData.country,
+			city: banchoData.city,
+		};
+		loading.value.bancho = false;
+
+		const IPSBData = await getIPSB();
+		IPSB.value = {
+			ip: IPSBData.ip,
+			country: IPSBData.country,
+			city: IPSBData.city,
+		};
+		loading.value.IPSB = false;
 	} catch (error) {
 		console.error("Error fetching data:", error);
 		loading.value.ipify = false;
 		loading.value.cloudflare = false;
+		loading.value.bancho = false;
+		loading.value.IPSB = false;
 	}
 };
 

@@ -251,7 +251,7 @@ const countryData: CountryData[] = [
 	{ acronym: "VU", name: "Vanuatu" },
 	{ acronym: "WF", name: "Wallis and Futuna" },
 	{ acronym: "WS", name: "Samoa" },
-	{ acronym: "XX", name: "" },
+	{ acronym: "XX", name: "Unknown" },
 	{ acronym: "YE", name: "Yemen" },
 	{ acronym: "YT", name: "Mayotte" },
 	{ acronym: "ZA", name: "South Africa" },
