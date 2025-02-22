@@ -4,8 +4,14 @@
 			<CardTitle class="font-bold text-center text-xl mb-4"
 				>你的 IP 地址</CardTitle
 			>
-			<Skeleton v-if="loading.ipify" class="h-6 w-[250px]" />
-			<span v-else class="text-center">{{ ipify }}</span>
+			<div class="mb-2">
+				<Skeleton v-if="loading.ipify" class="h-6 w-[250px]" />
+				<span v-else class="text-center">{{ ipify }}</span>
+			</div>
+			<div>
+				<Skeleton v-if="loading.ipify" class="h-6 w-[250px]" />
+				<span v-else class="text-center">{{ ipifyV6 }}</span>
+			</div>
 		</Card>
 		<div class="flex flex-wrap flex-row gap-4 m-4">
 			<Card class="container grow basis-1/3 mx-auto p-4">
@@ -53,8 +59,8 @@
 												getCountry(
 													bancho.country || "Unknown"
 												)
-											}}</span
-										>
+											}}
+										</span>
 									</TableCell>
 								</TableRow>
 								<TableRow>
@@ -220,6 +226,20 @@
 								</TableRow>
 								<TableRow>
 									<TableCell class="font-medium">
+										IPify IPv6
+									</TableCell>
+									<TableCell>
+										<Skeleton
+											v-if="loading.ipify"
+											class="h-5 w-[250px]"
+										/>
+										<span v-else>{{ ipifyV6 }}</span>
+									</TableCell>
+									<TableCell class=""> 来源不适用 </TableCell>
+									<TableCell class=""> 来源不适用 </TableCell>
+								</TableRow>
+								<TableRow>
+									<TableCell class="font-medium">
 										Cloudflare Trace
 									</TableCell>
 									<TableCell>
@@ -289,8 +309,14 @@
 import { ref, onMounted } from "vue";
 import { useDark } from "@vueuse/core";
 
-import { getIpify, getCloudflare, getBanchoGeoIP2, getIPSB } from "@/lib/api";
-import { getTime } from "@/lib/utils";
+import {
+	getIpify,
+	getIpifyV6,
+	getCloudflare,
+	getBanchoGeoIP2,
+	getIPSB,
+} from "@/lib/api";
+import { getTime } from "@/lib/libs";
 import { getCountryName } from "@/lib/metadata";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -308,18 +334,27 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 useDark();
 
 const { currentTime } = getTime();
 
 const loading = ref({
 	ipify: true,
+	ipifyV6: true,
 	cloudflare: true,
 	bancho: true,
 	IPSB: true,
 });
 
 const ipify = ref<string | null>(null);
+const ipifyV6 = ref<string | null>(null);
 const cloudflare = ref<{
 	loc: string | null;
 	ip: string | null;
@@ -345,6 +380,9 @@ const fetchData = async () => {
 		const ipifyData = await getIpify();
 		ipify.value = ipifyData.ip;
 		loading.value.ipify = false;
+		const ipifyV6Data = await getIpifyV6();
+		ipifyV6.value = ipifyV6Data.ip;
+		loading.value.ipifyV6 = false;
 
 		// Fetch cloudflare data after ipify data is fetched
 		const cloudflareData = await getCloudflare();
@@ -372,6 +410,7 @@ const fetchData = async () => {
 	} catch (error) {
 		console.error("Error fetching data:", error);
 		loading.value.ipify = false;
+		loading.value.ipifyV6 = false;
 		loading.value.cloudflare = false;
 		loading.value.bancho = false;
 		loading.value.IPSB = false;

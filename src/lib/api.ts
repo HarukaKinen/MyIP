@@ -97,3 +97,19 @@ export const getIpify = (): Promise<IPAddress> => {
 			throw error; // 抛出错误，以便在组件中捕获
 		});
 };
+
+// 定义 getIpify 函数，返回 Promise<IPAddress>
+export const getIpifyV6 = (): Promise<IPAddress> => {
+	return fetch("https://api64.ipify.org/?format=json")
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error("Failed to fetch IP address");
+			}
+			return response.json();
+		})
+		.then((data: IPAddress) => data)
+		.catch((error) => {
+			console.error("Error fetching IP address:", error);
+			throw error; // 抛出错误，以便在组件中捕获
+		});
+};
