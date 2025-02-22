@@ -67,11 +67,11 @@ export async function getIPSB(): Promise<any> {
 	let city = "-";
 	const response = await fetch(`https://api.ip.sb/geoip/`);
 	if (response.status !== 200) {
-        const ip = null
+		const ip = null;
 		return { ip, country, city };
 	} else {
 		const data = await response.json();
-        const ip = data.ip;
+		const ip = data.ip;
 		if (data.country_code) {
 			country = data.country_code;
 		}

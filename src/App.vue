@@ -45,7 +45,7 @@
 											v-if="loading.bancho"
 											class="h-5 w-[250px]"
 										/>
-										<span v-else>{{ ipify }}</span>
+										<span v-else>{{ cloudflare.ip }}</span>
 									</TableCell>
 									<TableCell
 										class="grid text-right justify-items-end"
@@ -334,13 +334,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-
 useDark();
 
 const { currentTime } = getTime();
@@ -393,7 +386,7 @@ const fetchData = async () => {
 		};
 		loading.value.cloudflare = false;
 
-		const banchoData = await getBanchoGeoIP2(ipify.value);
+		const banchoData = await getBanchoGeoIP2(cloudflareData.ip);
 		bancho.value = {
 			country: banchoData.country,
 			city: banchoData.city,
